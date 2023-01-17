@@ -1,0 +1,47 @@
+spring:
+#  profiles:
+#    active: dev
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates
+    mode: HTML
+  datasource:
+    url: jdbc:mysql://xxxxxxx:3306/disable-date?useSSL=false
+    username: xxxx
+    password: xxxx
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  rabbitmq:
+
+    host: xxxxxxx
+    port: xxxx
+    username: itcast
+    password: xxxxx
+    virtual-host: /disable
+
+    listener:
+      simple:
+        prefetch: 1     #（设置preFetch这个值，可以控制预取消息的上限）每次只能获取一条消息，处理完成才能获取下一个消息
+  application:
+    name: disablesquare
+  cloud:
+      nacos:
+        server-addr: xxxxxxx：xxxx  # nacos服务地址
+        discovery:
+          cluster-name: HZ  # 集群名称
+  redis:                        
+    host: xxxxxxx
+    port: 6379                # Redis的端口
+    password: xxxxx
+#    database:                 # Redis数据库索引（默认为0）
+#    timeout: 1000000          #
+#    lettuce:
+#      pool:
+#        max-active: -1        # 连接池最大连接数（使用负值表示没有限制）默认 8
+#        max-wait: -1          # 连接池最大阻塞等待时间（使用负值表示没有限制） 默认 -1
+
+server:
+  port: 5211
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true

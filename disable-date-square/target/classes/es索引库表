@@ -1,0 +1,1560 @@
+GET _search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+
+# 模拟请求
+#Get /
+
+
+# 测试分词器
+POST /_analyze
+{
+  "text": "黑马程序员学习java太棒了 IT行业 ",
+  "analyzer": "ik_max_word"
+}
+
+
+# 测试分词器
+POST /_analyze
+{
+  "text": "传智教育的课程可以白嫖，而且就业率高达95%,奥力给! IT行业 ",
+  "analyzer": "ik_smart"
+}
+
+
+#创建索引库
+PUT /heima
+{
+  "mappings": {
+    "properties": {
+      "info": {
+        "type": "text",
+        "analyzer": "ik_smart"
+      },
+      "email": {
+        "type": "keyword",
+        "index": false
+      },
+      "name": {
+        "type": "object",
+        "properties": {
+          "firstname": {
+            "type": "keyword"
+          },
+          "lastname": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }
+}
+
+# 查询
+GET /heima
+
+# 修改索引库，添加新字段
+PUT /heima/_mapping
+{
+  "properties": {
+    "age": {
+      "type": "integer"
+    }
+  }
+}
+
+# 删除
+DELETE /heima
+
+
+# 插入文档
+POST /heima/_doc/1
+{
+  "info": "黑马程序员java讲师",
+  "email": "zy@itcast.cn",
+  "name": {
+    "firstname": "云",
+    "lastname": "赵"
+  }
+}
+
+# 查询文档
+GET /heima/_doc/1
+
+
+# 删除文档
+DELETE /heima/_doc/1
+
+
+# 修改文档，方式1：全量修改文档，如果存在则删除旧的，新的覆盖旧的，如果原先没有，则新增该文档（所以放修改方式相当于也是一种插入文档的方法）
+POST /heima/_doc/1
+{
+  "info": "黑马程序员java讲师",
+  "email": "zhaoyun@itcast.cn",
+  "name": {
+    "firstname": "云",
+    "lastname": "赵"
+  }
+}
+
+
+# 修改文档，方式2: 局部修改文档字段
+POST /heima/_update/1
+{
+  "doc":{
+    "email": "ZY@itcast.cn"
+  }
+}
+
+
+DELETE /hotel
+# 酒店的mapping
+PUT /hotel
+{
+  "mappings": {
+    "properties": {
+      "id":{
+        "type":"keyword"
+      },
+      "name":{
+        "type":"text",
+        "analyzer": "ik_max_word",
+        "copy_to": "all"
+      },
+      "address":{
+        "type":"keyword",
+        "index":"false"
+      },
+      "price":{
+        "type":"integer"
+      },
+      "score":{
+        "type":"integer"
+      },
+      "brand":{
+        "type":"keyword"
+      },
+      "city":{
+        "type":"keyword"
+      },
+      "starName":{
+        "type":"keyword"
+      },
+      "business":{
+        "type":"keyword",
+        "copy_to": "all"
+      },
+      "location":{
+        "type":"geo_point"
+      },
+      "pic":{
+        "type":"keyword",
+        "index":false
+      },
+      "all":{
+        "type":"text",
+        "analyzer": "ik_max_word"
+      }
+    }
+  }
+}
+
+
+# 删除库
+DELETE /hotel
+
+# 查询库
+GET /hotel
+
+# 查询文档
+GET /hotel/_doc/61083
+
+
+#--------------------
+
+# 查询所有
+GET /hotel/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+# match查询
+GET /hotel/_search
+{
+  "query": {
+    "match": {
+      "all": "酒店"
+    }
+  }
+}
+
+# mutil_match查询
+GET /hotel/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "外滩如家",
+      "fields": ["brand","name","business"]
+    }
+  }
+}
+
+# 添加isAD字段
+POST /hotel/_update/1902197537
+{
+  "doc": {
+    "isAD" : true
+  }
+}
+
+POST /hotel/_update/2056126831
+{
+  "doc": {
+    "isAD" : true
+  }
+}
+
+POST /hotel/_update/1989806195
+{
+  "doc": {
+    "isAD" : true
+  }
+}
+
+POST /hotel/_update/2056105938
+{
+  "doc": {
+    "isAD" : true
+  }
+}
+
+
+#---------- 分布式 搜索引擎 ------------------------------------------
+
+# 聚合功能
+GET /hotel/_search
+{
+  "size":0,
+  "aggs": {
+    "brandAgg": {
+      "terms": {
+        "field": "brand",
+        "size": 20
+      }
+    }
+  }
+}
+
+
+
+# 聚合功能,自定义排序规则
+GET /hotel/_search
+{
+  "size":0,
+  "aggs": {
+    "brandAgg": {
+      "terms": {
+        "field": "brand",
+        "size": 20,
+        "order": {
+          "_count": "asc"
+        }
+      }
+    }
+  }
+}
+
+# 聚合功能，限定聚合范围
+GET /hotel/_search
+{
+  "query": {
+    "range": {
+      "price": {
+        "lte": 200
+      }
+    }
+  },
+
+  "size":0,
+  "aggs": {
+    "brandAgg": {
+      "terms": {
+        "field": "brand",
+        "size": 20
+
+      }
+    }
+  }
+}
+
+
+# 嵌套聚合metric
+GET /hotel/_search
+{
+  "size":0,
+  "aggs": {
+    "brandAgg": {
+      "terms": {
+        "field": "brand",
+        "size": 20,
+        "order": {
+          "scoreAgg.avg": "desc"
+        }
+      },
+      "aggs": {
+        "scoreAgg": {
+          "stats": {
+            "field": "score"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+GET /
+
+POST /_analyze
+{
+  "text": ["如家酒店还不错"],
+  "analyzer": "ik_max_word"
+}
+
+POST /_analyze
+{
+  "text": ["如家酒店还不错"],
+  "analyzer": "pinyin"
+}
+
+# 删除库
+DELETE /test
+
+# 自定义拼音分词器
+PUT /test
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_analyzer": {
+          "tokenizer": "ik_max_word",
+          "filter": "py"
+        }
+      },
+      "filter": {
+        "py": {
+          "type": "pinyin",
+          "keep_full_pinyin": false,
+          "keep_joined_full_pinyin": true,
+          "keep_original": true,
+          "limit_first_letter_length": 16,
+          "remove_duplicated_term": true,
+          "none_chinese_pinyin_tokenize": false
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "name":{
+        "type": "text",
+        "analyzer": "my_analyzer",
+        "search_analyzer": "ik_smart"
+      }
+    }
+  }
+}
+
+# 测试 自定义的分词器 的方式1
+POST /test/_analyze
+{
+  "text": ["如家酒店还不错"],
+  "analyzer": "my_analyzer"
+}
+
+
+# 测试 自定义的分词器 的方式2
+#先添加两个 拼音相同的 字段， 后搜索
+POST /test/_doc/1
+{
+  "id": 1,
+  "name": "狮子"
+}
+
+POST /test/_doc/2
+{
+  "id": 2,
+  "name": "虱子"
+}
+
+GET /test/_search
+{
+  "query": {
+    "match": {
+      "name": "shizi"
+    }
+  }
+}
+
+GET /test/_search
+{
+  "query": {
+    "match": {
+      "name": "掉入狮子笼咋办"
+    }
+  }
+}
+
+
+# 自动补全的索引库
+PUT test2
+{
+  "mappings": {
+    "properties": {
+      "title":{
+        "type": "completion"
+      }
+    }
+  }
+}
+# 示例数据
+POST test2/_doc
+{
+  "title": ["Sony", "WH-1000XM3"]
+}
+POST test2/_doc
+{
+  "title": ["SK-II", "PITERA"]
+}
+POST test2/_doc
+{
+  "title": ["Nintendo", "switch"]
+}
+
+# 自动补全查询
+POST /test2/_search
+{
+  "suggest": {
+    "title_suggest": {
+      "text": "s",
+      "completion": {
+        "field": "title",
+        "skip_duplicates": true,
+        "size": 10
+      }
+    }
+  }
+}
+
+
+# 查看酒店数据结构
+GET /hotel/_mapping
+
+# 删除hotel库
+DELETE /hotel
+
+# 酒店数据索引库
+PUT /hotel
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "text_anlyzer": {
+          "tokenizer": "ik_max_word",
+          "filter": "py"
+        },
+        "completion_analyzer": {
+          "tokenizer": "keyword",
+          "filter": "py"
+        }
+      },
+      "filter": {
+        "py": {
+          "type": "pinyin",
+          "keep_full_pinyin": false,
+          "keep_joined_full_pinyin": true,
+          "keep_original": true,
+          "limit_first_letter_length": 16,
+          "remove_duplicated_term": true,
+          "none_chinese_pinyin_tokenize": false
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "id":{
+        "type": "keyword"
+      },
+      "name":{
+        "type": "text",
+        "analyzer": "text_anlyzer",
+        "search_analyzer": "ik_smart",
+        "copy_to": "all"
+      },
+      "address":{
+        "type": "keyword",
+        "index": false
+      },
+      "price":{
+        "type": "integer"
+      },
+      "score":{
+        "type": "integer"
+      },
+      "brand":{
+        "type": "keyword",
+        "copy_to": "all"
+      },
+      "city":{
+        "type": "keyword"
+      },
+      "starName":{
+        "type": "keyword"
+      },
+      "business":{
+        "type": "keyword",
+        "copy_to": "all"
+      },
+      "location":{
+        "type": "geo_point"
+      },
+      "pic":{
+        "type": "keyword",
+        "index": false
+      },
+      "all":{
+        "type": "text",
+        "analyzer": "text_anlyzer",
+        "search_analyzer": "ik_smart"
+      },
+      "suggestion":{
+          "type": "completion",
+          "analyzer": "completion_analyzer"
+      }
+    }
+  }
+}
+
+GET /hotel/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+GET /hotel/_search
+{
+  "suggest": {
+    "suggestions": {
+      "text": "sd",
+      "completion": {
+        "field": "suggestion",
+        "skip_duplicates":"true",
+        "size":10
+      }
+    }
+  }
+}
+
+
+#————————————————————————————————————————————————婚恋平台系统—————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————————
+
+#婚恋平台系统
+
+DELETE /tb_disable_date_diary
+#创建动态索引库
+PUT /tb_disable_date_diary
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "text_anlyzer": {
+          "tokenizer": "ik_max_word",
+          "filter": "py"
+        },
+        "completion_analyzer": {
+          "tokenizer": "keyword",
+          "filter": "py"
+        }
+      },
+      "filter": {
+        "py": {
+          "type": "pinyin",
+          "keep_full_pinyin": false,
+          "keep_joined_full_pinyin": true,
+          "keep_original": true,
+          "limit_first_letter_length": 16,
+          "remove_duplicated_term": true,
+          "none_chinese_pinyin_tokenize": false
+        }
+      }
+    }
+  },
+
+
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "integer"
+      },
+      "diaryId": {
+        "type": "keyword"
+      },
+       "diaryUserId":{
+        "type": "keyword"
+      },
+      "diaryUserName":{
+        "type": "keyword"
+      },
+       "diaryTitle":{
+        "type": "text",
+        "analyzer": "text_anlyzer",
+        "search_analyzer": "ik_max_word"
+      },
+       "diaryContent":{
+        "type": "text",
+        "analyzer": "text_anlyzer",
+        "search_analyzer": "ik_max_word"
+      },
+      "diaryKind":{
+        "type": "integer"
+      },
+       "diaryCategoryId":{
+        "type": "integer",
+        "index": false
+      },
+       "diaryCategoryName":{
+        "type": "text",
+        "analyzer": "ik_smart"
+      },
+       "diaryTags":{
+        "type": "text",
+        "analyzer": "ik_smart"
+      },
+       "diaryStatus":{
+        "type": "integer"
+      },
+       "diaryComment":{
+        "type": "integer",
+        "index": false
+      },
+      "diaryViews":{
+        "type": "integer",
+        "index": false
+      },
+      "diaryLove":{
+        "type": "integer",
+        "index": false
+      },
+      "diaryCollect":{
+        "type": "integer"
+      },
+       "enableLook":{
+        "type": "integer"
+      },
+      "enableComment":{
+        "type": "integer"
+      },
+      "isDeleted":{
+        "type": "integer"
+      },
+       "createTime":{
+        "type": "date",
+        "index": false
+      },
+       "updateTime":{
+        "type": "date",
+        "index": false
+      },
+      "ps":{
+        "type": "keyword"
+      },
+      "suggestion":{
+        "type": "completion",
+        "analyzer": "completion_analyzer"
+      }
+    }
+  }
+}
+#单个查询
+GET /tb_disable_date_diary/_doc/11
+#批量查询
+GET /tb_disable_date_diary/_search
+GET /tb_disable_date_diary/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+#全文检索查询 match，会对用户输入内容分词，然后去倒排索引库检索
+GET /tb_disable_date_diary/_search
+{
+  "query": {
+    "match": {
+      "diaryTitle": "IT行业"
+    }
+  }
+}
+#全文检索查询 multi_match:与match查询类似，只不过允许同时查询多个字段
+# 缺点，多个字段查询会效率低，可以将多个字段copyto到一个all字段里在进行match单个字段查询
+GET /tb_disable_date_diary/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "IT",
+      "fields": ["diaryTitle","diaryContent"]
+    }
+  }
+}
+
+
+
+
+
+DELETE /disable-date
+
+#_________________________________________________别动！______________________________________
+GET /tb_disable_date_person_basic_info
+GET /tb_disable_date_person_basic_info/_doc/1
+GET /tb_disable_date_person_basic_info/_search
+#________________________________________________________________________________________
+
+
+#批量查询
+GET /disable-date/_search
+
+GET /disable-date/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+DELETE /tb_disable_date_diary_comment
+#创建评论
+PUT /tb_disable_date_diary_comment
+{
+  "mappings": {
+    "properties": {
+      "id":{
+        "type": "integer"
+      },
+      "commentId":{
+        "type": "keyword"
+      },
+      "diaryId":{
+        "type": "keyword"
+      },
+      "commentatorName":{
+        "type": "keyword"
+      },
+      "commentBody":{
+        "type": "keyword",
+        "index": false
+      },
+      "commentCreateTime":{
+        "type": "date",
+        "index": false
+      },
+      "commentatorIp":{
+        "type": "keyword"
+      },
+      "replyAmount":{
+        "type": "integer"
+      },
+      "replyCreateTime":{
+        "type": "date",
+        "index": false
+      },
+      "commentStatus":{
+        "type": "integer"
+      },
+      "isDeleted":{
+        "type": "integer",
+        "index": false
+      },
+      "likeAmount":{
+        "type": "integer"
+      }
+    }
+  }
+}
+GET /tb_disable_date_diary_comment
+GET /tb_disable_date_diary_comment/_doc/35
+GET /tb_disable_date_diary_comment/_search
+
+
+DELETE /tb_disable_date_diary_reply
+#创建评论的回复
+PUT /tb_disable_date_diary_reply
+{
+  "mappings": {
+    "properties": {
+      "id":{
+        "type": "integer"
+      },
+      "replyId":{
+        "type": "keyword"
+      },
+      "diaryId":{
+        "type": "keyword"
+      },
+      "commentId":{
+        "type": "keyword"
+      },
+      "replyContent":{
+        "type": "keyword"
+      },
+      "replyUserName":{
+        "type": "keyword"
+      },
+      "replyUserId":{
+        "type": "keyword"
+      },
+      "commentUserId":{
+        "type": "keyword"
+      },
+      "commentUserName":{
+        "type": "keyword"
+      },
+      "replyStatus":{
+        "type": "integer"
+      },
+      "createTime":{
+        "type": "date",
+        "index": false
+      },
+      "isDeleted":{
+        "type": "integer",
+        "index": false
+      },
+      "likeAmount":{
+        "type": "integer"
+      }
+    }
+  }
+}
+GET /tb_disable_date_diary_reply/_doc/19
+GET /tb_disable_date_diary_reply/_search
+
+
+DELETE /tb_disable_diary_pictures
+#创建照片的表
+PUT /tb_disable_diary_pictures
+{
+  "mappings": {
+    "properties": {
+      "id":{
+        "type":"integer"
+      },
+      "diaryId":{
+        "type":"keyword"
+      },
+      "picName":{
+        "type":"keyword"
+      },
+      "userId":{
+        "type":"integer"
+      },
+      "picPath":{
+        "type":"keyword"
+      },
+      "picWidth":{
+        "type":"integer"
+      },
+      "picHeight":{
+        "type":"integer"
+      },
+      "likeCounts":{
+        "type":"integer"
+      },
+      "status":{
+        "type":"integer"
+      },
+      "createTime":{
+        "type":"date"
+      }
+    }
+  }
+}
+
+GET /tb_disable_diary_pictures/_doc/132
+GET /tb_disable_diary_pictures/_search
+
+GET /tb_disable_date_diary/_doc/1
+GET /tb_disable_date_diary_comment/_doc/41
+GET /tb_disable_date_diary_reply/_doc/64
+GET /tb_disable_pictures/_doc/135
+
+
+DELETE /tb_disable_diary_videos
+PUT /tb_disable_diary_videos
+{
+  "mappings": {
+    "properties": {
+      "id":{
+        "type": "integer"
+      },
+      "diaryId":{
+        "type": "keyword"
+      },
+      "userId":{
+        "type": "integer"
+      },
+      "audioId":{
+        "type": "keyword"
+      },
+      "videoDesc":{
+        "type": "keyword"
+      },
+      "videoPath":{
+        "type": "keyword"
+      },
+      "videoSeconds":{
+        "type": "float"
+      },
+       "videoWidth":{
+        "type": "integer"
+      },
+       "videoHeight":{
+        "type": "integer"
+      },
+       "coverPath":{
+        "type": "keyword"
+      },
+       "likeCounts":{
+        "type": "integer"
+      },
+       "status":{
+        "type": "integer"
+      },
+       "createTime":{
+        "type": "date"
+      }
+    }
+  }
+}
+GET /tb_disable_diary_videos/_search
+
+
+
+DELETE /tb_disable_date_follow
+#创建关注的关系索引库
+PUT /disable-date-follow
+{
+  "mappings": {
+    "properties": {
+      "id":{
+        "type":"integer"
+      },
+      "user_id":{
+        "type":"integer"
+      },
+      "followed_user_id":{
+        "type":"integer"
+      },
+      "status":{
+        "type":"integer"
+      },
+      "create_time":{
+        "type":"date"
+      },
+      "update_time":{
+        "type":"date"
+      }
+    }
+  }
+}
+GET /tb_disable_date_follow/_search
+
+
+#炜
+DELETE /disable-date-basic-info
+PUT /disable-date-basic-info
+{
+    "mappings": {
+    "properties": {
+      "person_id":{
+        "type": "keyword"
+      },
+      "person_name":{
+        "type": "keyword"
+      },
+      "sex":{
+        "type": "integer"
+      },
+      "age":{
+        "type": "integer"
+      },
+      "work_addr":{
+        "type": "text",
+        "index": false
+      },
+      "household_addr":{
+        "type": "text",
+        "index": false
+      },
+      "marital_status":{
+        "type": "keyword",
+        "index": false
+      },
+      "height":{
+        "type": "integer"
+      },
+      "weight":{
+        "type": "integer"
+      },
+      "degree":{
+        "type": "keyword"
+      },
+      "income":{
+        "type": "integer"
+      },
+      "occupation":{
+        "type": "keyword"
+      },
+      "housing_status":{
+        "type": "keyword"
+      },
+      "car_status":{
+        "type": "keyword"
+      },
+      "expected_marry_time":{
+        "type": "date",
+        "index": false
+      },
+      "person_intro":{
+        "type": "text"
+      },
+      "person_sign":{
+        "type": "text"
+      },
+      "location":{
+        "type": "geo_point"
+      },
+      "wechat":{
+        "type": "keyword",
+        "index": false
+      },
+      "wechat_code_images_path":{
+        "type": "text",
+        "index": false
+      },
+      "qq":{
+        "type": "text",
+        "index": false
+      },
+      "email":{
+        "type": "text",
+        "index": false
+      }
+    }
+  }
+}
+
+
+#单个查询
+GET /disable_date_basic_info/_doc/1
+#批量查询
+GET /disable-date-basic-info/_search
+
+
+
+#详细信息
+DELETE /tb_disable_date_person_detail_info
+PUT /tb_disable_date_person_detail_info
+{
+  "mappings": {
+    "properties": {
+      "person_id":{
+        "type": "keyword"
+      },
+      "disable_type":{
+        "type": "keyword"
+      },
+      "disable_level":{
+        "type": "integer"
+      },
+      "is_provide":{
+        "type": "integer"
+      },
+      "auxiliary_tool":{
+        "type": "keyword"
+      },
+      "cause":{
+        "type": "keyword"
+      },
+      "is_genetic":{
+        "type": "integer"
+      },
+      "brother_number":{
+        "type": "integer"
+      },
+      "living_will":{
+        "type": "integer"
+      },
+      "is_smoking":{
+        "type": "integer"
+      },
+      "marry_form":{
+        "type": "integer"
+      },
+      "is_drinking":{
+        "type": "integer"
+      },
+      "fertility_status":{
+        "type": "keyword"
+      },
+      "keeping_status":{
+        "type": "keyword"
+      },
+      "hobby":{
+        "type": "text",
+        "analyzer": "ik_max_word"
+      },
+      "blood_type":{
+        "type": "integer"
+      },
+      "habit":{
+        "type": "text",
+         "analyzer": "ik_max_word"
+      },
+      "company_type":{
+        "type": "integer"
+      },
+      "company_name":{
+        "type": "keyword"
+      },
+      "work_industry":{
+        "type": "keyword"
+      },
+      "housing_location":{
+        "type": "keyword"
+      },
+      "person_tag":{
+        "type": "text",
+         "analyzer": "ik_max_word"
+      }
+    }
+  }
+}
+#GET /disable-date-detail-info/_search
+GET /tb_disable_date_person_detail_info/_search
+
+
+
+DELETE /tb_disable_date_user_like_hobby
+PUT /tb_disable_date_user_like_hobby
+{
+  "mappings": {
+    "properties": {
+      "id":{
+        "type": "keyword"
+      },
+      "userId":{
+        "type": "keyword"
+      },
+      "hobby":{
+        "type": "text",
+        "analyzer": "ik_smart"
+
+      }
+    }
+  }
+}
+GET /tb_disable_date_user_like_hobby/_search
+
+
+
+
+
+
+DELETE /tb_disable_date_user_collect
+#创建用户收藏的视频秀或图片秀
+PUT /tb_disable_date_user_collect
+{
+  "mappings": {
+    "properties": {
+      "id":{
+        "type": "keyword"
+      },
+      "userId":{
+        "type": "keyword"
+      },
+      "likedId":{
+        "type": "keyword"
+      },
+      "type":{
+        "type": "integer"
+      },
+      "createTime":{
+        "type": "date"
+      }
+    }
+  }
+}
+GET /tb_disable_date_user_collect/_doc/21
+GET /tb_disable_date_user_collect/_search
+GET /tb_disable_date_diary/_doc/1
+
+
+# ------------------------------------------------------------------------
+
+
+GET _search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+PUT /disable-date-requirements
+{
+  "mappings": {
+    "properties": {
+      "personId":{
+        "type":"keyword"
+        , "index": false
+      },
+      "ageRange":{
+        "type":"text",
+        "index": false
+      },
+      "heightRange":{
+        "type":"keyword",
+        "index":false
+      },
+      "marry_status":{
+        "type":"keyword"
+        , "index": false
+      },
+      "educationBackground":{
+        "type":"keyword"
+        , "index": false
+      },
+      "income":{
+        "type":"keyword"
+        , "index": false
+      },
+      "housingStatus":{
+        "type":"keyword"
+        , "index": false
+      },
+      "carStatus":{
+        "type":"keyword"
+        , "index": false
+      },
+      "otherRequirements":{
+        "type":"keyword"
+        , "index": false
+      }
+    }
+  }
+}
+
+GET /disable-date-requirements
+
+DELETE /disable-date-requirements
+
+
+PUT /disable-date-basic-info
+{
+    "mappings": {
+    "properties": {
+      "personId":{
+        "type": "keyword"
+      },
+      "personName":{
+        "type": "keyword"
+      },
+      "sex":{
+        "type": "integer"
+      },
+      "age":{
+        "type": "integer"
+      },
+      "workAddr":{
+        "type": "text",
+        "index": false
+      },
+      "householdAddr":{
+        "type": "text",
+        "index": false
+      },
+      "maritalStatus":{
+        "type": "keyword",
+        "index": false
+      },
+      "height":{
+        "type": "integer"
+      },
+      "weight":{
+        "type": "integer"
+      },
+      "degree":{
+        "type": "keyword"
+      },
+      "income":{
+        "type": "integer"
+      },
+      "occupation":{
+        "type": "keyword"
+      },
+      "housingStatus":{
+        "type": "keyword"
+      },
+      "carStatus":{
+        "type": "keyword"
+      },
+      "expectedMarryTime":{
+        "type": "keyword"
+      },
+      "personIntro":{
+        "type": "text"
+      },
+      "personSign":{
+        "type": "text"
+      },
+      "location":{
+        "type": "geo_point"
+      },
+      "wechat":{
+        "type": "keyword",
+        "index": false
+      },
+      "wechatCodeImagesPath":{
+        "type": "text",
+        "index": false
+      },
+      "qq":{
+        "type": "text",
+        "index": false
+      },
+      "email":{
+        "type": "text",
+        "index": false
+      },
+      "mv":{
+        "type": "text",
+        "index": false
+      }
+    }
+  }
+}
+GET /disable-date-basic-info/_search
+
+GET /disable-date-basic-info
+
+DELETE /disable-date-basic-info
+
+PUT /disable-date-detail-info
+{
+    "mappings": {
+    "properties": {
+      "personId":{
+        "type": "keyword"
+      },
+      "disableType":{
+        "type": "keyword"
+      },
+      "disableLevel":{
+        "type": "integer"
+      },
+      "isProvide":{
+        "type": "integer"
+      },
+      "auxiliaryTool":{
+        "type": "keyword"
+      },
+      "cause":{
+        "type": "keyword"
+      },
+      "isGenetic":{
+        "type": "integer"
+      },
+      "brotherNumber":{
+        "type": "integer"
+      },
+      "livingWill":{
+        "type": "integer"
+      },
+      "isSmoking":{
+        "type": "integer"
+      },
+      "marryForm":{
+        "type": "integer"
+      },
+      "isDrinking":{
+        "type": "integer"
+      },
+      "fertilityStatus":{
+        "type": "keyword"
+      },
+      "keepingStatus":{
+        "type": "keyword"
+      },
+      "hobby":{
+        "type": "text",
+        "analyzer": "ik_max_word"
+      },
+      "bloodType":{
+        "type": "integer"
+      },
+      "companyType":{
+        "type": "integer"
+      },
+      "workIndustry":{
+        "type": "keyword"
+      },
+      "housingLocation":{
+        "type": "keyword"
+      },
+      "personTag":{
+        "type": "text"
+      }
+    }
+  }
+}
+
+GET /disable-date-detail-info
+
+DELETE /disable-date-detail-info
+
+PUT /disable-date-user
+{
+  "mappings": {
+    "properties": {
+      "userId":{
+        "type":"integer"
+      },
+      "nickName":{
+        "type":"keyword"
+      },
+      "loginName":{
+        "type":"keyword"
+      },
+      "passwordMd5":{
+        "type":"keyword"
+      },
+      "isDeleted":{
+        "type":"integer"
+      },
+      "lockedFlag":{
+        "type":"integer"
+      },
+      "createTime":{
+        "type":"date"
+      }
+    }
+  }
+}
+
+GET /disable-date-user
+
+DELETE /disable-date-user
+
+PUT /disable-date-fans
+{
+  "mappings": {
+    "properties": {
+      "id":{
+        "type":"integer"
+      },
+      "userId":{
+        "type":"integer"
+      },
+      "follower":{
+        "type":"integer"
+      },
+      "status":{
+        "type":"integer"
+      },
+      "createTime":{
+        "type":"date"
+      },
+      "updateTime":{
+        "type":"date"
+      }
+    }
+  }
+}
+
+GET /disable-date-fans
+
+DELETE /disable-date-fans
+
+PUT /disable-date-follow
+{
+  "mappings": {
+    "properties": {
+      "id":{
+        "type":"integer"
+      },
+      "userId":{
+        "type":"integer"
+      },
+      "followedUserId":{
+        "type":"integer"
+      },
+      "status":{
+        "type":"integer"
+      },
+      "createTime":{
+        "type":"date"
+      },
+      "updateTime":{
+        "type":"date"
+      }
+    }
+  }
+}
+
+GET /disable-date-follow
+
+DELETE /disable-date-follow
+
+GET /disable-date-fans/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+
+GET /disable-date-fans/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+GET /disable-date-basic-info/_search
+{
+  "query": {
+    "geo_distance": {
+      "distance":"15km",
+      "location":"20, 15"
+    }
+  }
+}
+
+
+GET /disable-date-basic-info/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+
+
+
+
+

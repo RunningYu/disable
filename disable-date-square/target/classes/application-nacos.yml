@@ -1,0 +1,17 @@
+#spring:
+#  application:
+#    name: squareservice
+#  cloud:
+#    nacos:
+#      server-addr: 222.177.66.230:8848  #
+#      discovery:
+#        cluster-name: CQ  # 集群名称 CQ：重庆
+#        service: aaaa
+squareservice:    #要做配置的服务名称
+  ribbon:
+    NFLoadBalancerRuleClassName: com.alibaba.cloud.nacos.ribbon.NacosRule  #优先选择同集群服务实例列表，本地集群找不到提供者，才去其它集群寻找，并且会做报告，确定可用实例列表后，进行随机负载均衡
+#    NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule  #负载均衡规则
+ribbon:
+  eager-load:
+    enabled: true   #表示开启饥饿加载   可以在项目启动的时候就完成服务加载。速度就可以得到一定的提升
+    clients: squareservice       #指定饥饿加载的服务名称
